@@ -1,0 +1,773 @@
+---
+title: "Forecasting the 2025 Canadian Election By Regression Model: Potential Shift from Trudeau's Administration to the Conservatives!"
+author: 'Ellen Zhang'
+date: "Nov 22, 2023"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r include=FALSE}
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(MASS)
+library(knitr)
+library(tidyr)
+```
+
+
+
+## Introduction
+Canadian elections hold immense significance because it is showcasing the core tenets of democracy and governance. In this electoral process, Canadians exercise their voting rights through a ballot for a single  parliamentarian candidate locally in their province, shaping the composition of the Parliament and, consequently, the election outcome. While direct votes for the Canadian prime minister are not cast, the Parliament's composition is pivotal in determining the government formation and the prime minister's appointment (Elections step by step, 2023). The most recent federal election in Canada took place on September 20, 2021, resulting in the establishment of the 44th Parliament, with Justin Trudeau's Liberal Party clinched the majority of seats, securing a significant presence in the House of Commons (Past elections, 2023).
+
+The primary concern for the voters revolve around 10 critical issues, including the cost of living, healthcare, climate change, post-pandemic recovery plans, Canada's economic future, taxes, poverty, housing, government deficit, and medical costs. According to a public opinion survey, dissatisfaction with the Trudeau government is widespread, with only 30% of respondents expressing satisfaction compared to 60% expressing dissatisfaction. When considering the best Prime Minister in the world, Trudeau ranks significantly behind Pierre Poilievre of the Tory Party from the UK, with 27% supporting Poilievre and 17% supporting Trudeau. Reasons for the desire for Trudeau to step down mainly revolve around concerns about affordability, the cost of living, housing availability, inflation, and public debt. Meanwhile, the Canadian national government recently unveiled an ambitious plan to admit 500,000 migrants annually by 2025, looking for nearly 1.5 million newcomers in Canada within the next three years (Canada's Immigration Levels Plan 2024-2026). Historically, the Liberal government's immigration strategy tends to be more permissive, offering broader entry routes compared to that of the Conservative Party. Consequently, a substantial backlog of pending immigration applications has accumulated. Based on historical patterns, if the Conservative Party returns to power in 2025 after a nine-year hiatus, the immigration policy overhaul initiated in 2008 might swiftly address the backlog. This could potentially lead to a decrease in immigrant numbers and certain immigration groups might be temporarily halted or even permanently discontinued. The Conservative Party of Canada underscores the belief that immigrants should actively contribute to the nation's economic prosperity. Hence, the party's immigration policy centers on attracting highly skilled and high-income immigrants to boost the economy. The Conservative aim is to promptly address Canadians' concerns regarding the current high cost of living, inflation, and housing issues, while striving to provide better job opportunities, safer communities, and affordable essentials such as food and gas (Nakhaie, 2006). 
+
+## Hypothesis
+Based on our analysis of past trends, government policies, and electoral procedures, our hypothesis will be aligning with the prevailing expectation that the Conservatives will emerge victorious in the 2025 election (Korzinsk, 2023). **We hypothesize that the Conservatives will likely secure the highest number of votes in the upcoming 2025 Canadian federal election, with the Liberals expected to follow closely in second place.** Based on research, we observe that the vote-counting procedure in Canada plays a big role in deciding the winner because the voters are not directly voting for a specific prime minister candidate. Initially, all votes are tallied based on the first preference. If a candidate secures 50% of the vote, they win the election. If not, the candidate with the fewest votes is eliminated (Past elections, 2023).  Subsequently, votes from supporters of the eliminated candidate are redistributed to their second-choice candidate. This iterative redistribution continues until one candidate receives 50% of the vote. Thus, we aim to forecast the election probabilities for the Conservative and Liberal parties and compare which is higher (Elections step by step, 2023).
+
+## The Terminology
+We will fit three **binary logistic regression models** to predict **the probability of participants elected for the Conservative, Liberal, or the NDP**.
+Binary logistic regression is a statistical model specifically designed to forecast the likelihood of a binary outcome, where the variable in question has two possible results. In our case, these outcomes represent each observation's (individuals') probabilities of affiliating with the Conservative, Liberal, or NDP parties, each outcomes are predicted through separate logistic regression models with the response variables being "to vote for the corresponding party or not". The predictors used across these models are the same, which include age, sex, province, education, religion, and income before tax, and the variable "sex" will be removed after we do the AIC model testing. Further justification will be provided later in the model selection section. This regression method is particularly useful when there exists a non-linear relationship between independent and dependent variables, and especially in categorical dependent variable scenarios just like ours. Additionally, we will perform post-stratification in our analysis to enhance the accuracy. Post-stratification aids in refining precision estimates by ensuring that the sample is more representative of the entire population.
+
+## Census Data, Survey Data, and Variables of Interest
+The provided census data, The General Social Survey(GSS), is from August 12th, 2022. We will adjust it appropriately to align with our survey dataset. The CES, Survey Data, is from the year 2023 and it contained more than 37000 participants(Canadian Election Study, 2023). We have adjusted both datasets, keeping the variables: age, sex, province, education, religion, and income before tax. Taking a census typically incurs higher costs and requires more time, as it necessitates contacting each person within the population. On the other hand, surveys tend to be more economical and faster, particularly when dealing with sizable populations, as information is gathered from a representative subset.
+
+#### Age \
+Age plays a great deal when it comes to voting participation, and a notable difference in voter turnout exists between younger and older age groups. In 2011, the participation rate among young voters was over 35 percentage points lower compared to individuals in the 65 to 74 age category Youth voting trends in Canada (Youth voting trends in Canada, 2023).
+
+#### Sex \
+There are relationships between sex and voting for Conservative and Liberty. This sheds light on an aspect often overlooked in the "modern gender gap" in Canada: while women are more inclined than men to vote for the NDP, they are also more likely to vote Conservative than NDP. The phenomenon can also be attributed to the "gender-generation gap" (Shorrocks, Reference Shorrocks 2018). The voting pattern of older women, who are more religious than their younger counterparts, leans toward the Conservative party, despite sharing the younger women's support for economic equality and state intervention. This implies that cohort replacement plays a role in explaining the evolution of the modern gender gap(Gidengil, 2022).
+
+#### Province \
+In essence, voters in different provinces of the country differ in how they prioritize different factors in their decision-making. A significant discovery is that these variations cannot be attributed to differences in social composition. Individuals with similar social background characteristics exhibit distinct voting patterns based on their geographical location, and this divergence is attributed to variations in their decision-making process when casting their votes (Gidengil et al., Reference Gidengil, Blais, Nevitte and Nadeau 1999; Stephenson et al., Reference Stephenson, Lawlor, Cross, Blais and Gidengil 2019). In essence, voters in different regions of the country differ in how they prioritize different factors in their decision-making(Gidengil, 2022).
+
+#### Education \
+The increasing level of education will have an increasing level of vote participation. The impact of education on voting, described as 'positive,' was considerably more pronounced among younger individuals (Factors associated with voting, 2015).
+
+
+#### Religion \
+According to recent research conducted at the University of Waterloo, there is also a strong relationship between voter’s religious beliefs and voting. Individuals in Canada who view religion as significant in their lives were discovered to have a higher likelihood of supporting the Conservative Party in the 2015 elections. The research also suggests that those with stronger religious beliefs generally hold more conventional moral perspectives, making them more inclined to back conservative candidates and parties that align with their values. (How religious beliefs affect voting behavior in Canada, 2023)
+
+
+#### Income before tax \
+We have observed that there is a strong correlation between participants’ income level and their tendency to vote for a certain party. Wastson and Arunachalam' research suggested that an extra £1,000 in annual income is associated with a increase of 2–3 percentage points in the likelihood of endorsing the Conservative party. This research underscores that income influences both political convictions and voting tendencies in a consistent manner(Watson & Arunachalam, 2016). 
+
+\newpage
+
+## Data
+
+Census data: The data were collected by the General Social Survey (GSS) between May and December 2022.
+
+Survey data: The data were collected by the Canada Election Study 2021 online survey from August 17, 2021, to September 19, 2021.
+
+```{r include=FALSE}
+# Here you can load in and clean the census data (you may need to do the cleaning in a separate R script). 
+census_data <- read_csv("gss_clean.csv")
+
+# Here you can load in and clean the survey data. 
+load('ces2021.RData')
+```
+
+### Survey Dataset Cleaning
+
+```{r include=FALSE}
+
+#### You will need to update/clean the code below based off the variables you want to use in your poststratification.
+
+# Calculate the proportion of man and woman in the survey data set
+prop_man <- sum(survey_data$cps21_genderid == "1") / nrow(survey_data)
+prop_woman <- sum(survey_data$cps21_genderid == "2") / nrow(survey_data)
+
+survey_data_new <- 
+  survey_data %>% 
+  mutate(age = cps21_age,
+         sex = sample(c("Male", "Female"), size = nrow(survey_data), prob = (c(prop_man, prop_woman)), replace = TRUE),
+         province = case_when(cps21_province == 1 ~ "Alberta",
+                              cps21_province == 2 ~ "British Columbia",
+                              cps21_province == 3 ~ "Manitoba",
+                              cps21_province == 4 ~ "New Brunswick",
+                              cps21_province == 5 ~ "Newfoundland and Labrador",
+                              cps21_province == 6 ~ "Northwest Territories",
+                              cps21_province == 7 ~ "Nova Scotia", 
+                              cps21_province == 8 ~ "Nunavut", 
+                              cps21_province == 9 ~ "Ontario", 
+                              cps21_province == 10 ~ "Prince Edward Island", 
+                              cps21_province == 11 ~ "Quebec", 
+                              cps21_province == 12 ~ "Saskatchewan",
+                              cps21_province == 13 ~ "Yukon"),
+         education = case_when(cps21_education %in% c(1, 2, 3, 12) ~ "Limited Education",
+                               cps21_education %in% c(4, 5, 6, 7, 8) ~ "Some Education",
+                               cps21_education %in% c(9, 10, 11) ~ "Highly Educated"),
+         religion = case_when(cps21_religion == 1 ~ "NO", 
+                              TRUE ~ "YES"),
+         income_before_tax = ifelse(cps21_income_number >= 125000, "Upper Middle Class to Wealthy", ifelse(cps21_income_number >= 50000, "Middle Class", "Lower Middle Class to Poor")),
+         vote_liberal = ifelse(cps21_votechoice == 1, 1, 0),
+         vote_conservative = ifelse(cps21_votechoice == 2, 1, 0),
+         vote_ndp = ifelse(cps21_votechoice == 3, 1, 0)) %>% 
+  dplyr::select(age, sex, province, education, religion, income_before_tax, vote_liberal, vote_conservative, vote_ndp) %>% 
+  filter(!(province == "Northwest Territories" | province == "Nunavut" | province == "Yukon")) 
+```
+
+#### Age (age) \
+`cps21_age` in the survey dataset reflects the age of respondents when they are taking the General Social Survey. No additional changes are needed. Rename it as the `age` variable to match the age variable in the census dataset.
+
+#### Sex (sex) \
+While navigating the survey dataset, `cps21_genderid` reveals 9474 men, 11370 women, 90 non-binary respondents, and 34 others. Since only a small portion of respondents chose non-binary and other gender options, a better approach would be to add these respondents to women and men proportionally. In this case, randomly sample males and females, with the proportion of women set at 0.5422 and the proportion of men at 0.4518.
+
+#### Province (province) \
+By comparing the province variable in the survey dataset with that in the census dataset, `cps21_province` in the survey dataset has three extra provinces, resulting in a mismatch between the two datasets. In this case, filter out the provinces of `Northwest Territories`, `Nunavut`, and `Yukon` in the survey dataset to ensure that the province names match in both datasets. Additionally, in the survey dataset, the provinces are labeled with numbers. To use this variable in the logistic regression model, convert the numeric labels into categorical labels.
+
+#### Education (education) \
+Since there are twelve levels of education in `cps21_education` in the survey dataset, to better analyze this variable, categorize these levels into three main groups. Specifically, categorize `No schooling`, `Some elementary school`, `Completed elementary school`, ` Don't know/ Prefer not to answer` into `Limited Education`; categorize `Some secondary/ high school`, `Completed secondary/ high school`, `Some technical, community college, CEGEP, College Classique`, `Completed technical, community college, CEGEP, College Classique`, `Some university` into `Some Education`; categorize `Bachelor's degree`, `Master's degree`, `Professional degree or doctorate` into `Highly Educated`.
+
+#### Religion (religion) \
+`cps21_religion` in the survey dataset indicates whether the respondent has a religion or not. If the respondent selects `1`, they are categorized as atheists, and if they choose any number other than `1`, they are considered to have a religion. In this case, classify them into two groups. If they choose `1`, they belong to the `NO` group, and if they select any number other than `1`, they fall into the `YES` group.
+
+#### Income Before Tax (income_before_tax) \
+`cps21_income_number` in the survey dataset represents the total household income before taxes. Since it is a numerical variable, to better suit the logistic regression model, convert the numerical data into categorical data and separate the data into three groups. The first group, `Upper Middle Class to Wealthy`, includes incomes greater than or equal to `125000`. The second group, `Middle Class`, includes incomes greater than or equal to `50000` but less than `125000`. The third group, `Lower Middle Class to Poor`, includes incomes less than `50000`.
+
+#### Vote for Liberal Party (vote_liberal) \
+`cps21_votechoice` records the party that the respondent would vote for. If the respondent selects `1`, they would vote for the Liberal Party. To better fit the logistic regression model, categorize the data into two distinct values - `0` or `1`. If the respondent selects `1`, they would be categorized in the `1` group. If the respondent selects a number other than `1`, they would be categorized in the `0` group.
+
+#### Vote for Conservative Party (vote_conservative) \
+`cps21_votechoice` records the party that the respondent would vote for. If the respondent selects `2`, they would vote for the Conservative Party. To better fit the logistic regression model, categorize the data into two distinct values - `0` or `1`. If the respondent selects `2`, they would be categorized in the `1` group. If the respondent selects a number other than `2`, they would be categorized in the `0` group.
+
+#### Vote for New Democratic Party (vote_ndp) \
+`cps21_votechoice` records the party that the respondent would vote for. If the respondent selects `3`, they would vote for the New Democratic Party. To better fit the logistic regression model, categorize the data into two distinct values - `0` or `1`. If the respondent selects `3`, they would be categorized in the `1` group. If the respondent selects a number other than `3`, they would be categorized in the `0` group.
+
+### Census Dataset Cleaning
+
+```{r include=FALSE}
+census_data_new <- census_data %>% 
+  mutate(age=round(age),
+         sex = sex,
+         province = province,
+         education = case_when(education %in% c("Less than high school diploma or its equivalent", NA) ~ "Limited Education",
+                               education %in% c("High school diploma or a high school equivalency certificate", "Trade certificate or diploma",
+                                                "College, CEGEP or other non-university certificate or di...", "University certificate or diploma below the bachelor's level") ~ "Some Education",
+                               education %in% c("Bachelor's degree (e.g. B.A., B.Sc., LL.B.)", "University certificate, diploma or degree above the bach...") ~ "Highly Educated"),
+         religion = case_when(religion_has_affiliation %in% c("Has religious affiliation", "Don't know", NA) ~ "YES",
+                              religion_has_affiliation %in% c("No religious affiliation") ~ "NO"),
+         income_before_tax = case_when(income_respondent %in% c("Less than $25,000", "$25,000 to $49,999") ~ "Lower Middle Class to Poor",
+                                       income_respondent %in% c("$50,000 to $74,999", "$75,000 to $99,999",
+                                                                "$100,000 to $ 124,999") ~ "Middle Class",
+                                       income_respondent %in% c("$125,000 and more") ~ "Upper Middle Class to Wealthy")
+         ) %>% 
+  dplyr::select(age, sex, province, education, religion, income_before_tax)
+```
+
+#### Age (age) \
+`Age` in the census dataset is recorded as a floating-point number. To match the data with the `age` in the survey dataset, round `age` to the nearest integer.
+
+#### Sex (sex) \
+`Sex` in the census dataset is recorded as `Male` or `Female`, which matches the survey dataset. No additional changes are needed.
+
+#### Province (province) \
+`Province` in the census dataset is recorded as `Quebec`, `Manitoba`, `Ontario`, `Alberta`, `Nova Scotia`, `British Columbia`, `Saskatchewan`, `Prince Edward Island`, `New Brunswick`, and `Newfoundland and Labrador`, which matches the survey dataset. No additional changes are needed.
+
+#### Education (education) \
+`Education` in the census dataset is recorded as eight different education levels, including missing values as one of the levels. To match the data with the `education` in the survey dataset, categorize these levels into three main groups. Specifically, categorize `Less than high school diploma or its equivalent` and missing values into `Limited Education`; categorize `High school diploma or a high school equivalency certificate`, `Trade certificate or diploma`, `College, CEGEP, or other non-university certificate or diploma`, `University certificate or diploma below the bachelor's level` into `Some Education`; categorize `Bachelor's degree (e.g., B.A., B.Sc., LL.B.)`, `University certificate, diploma, or degree above the bachelor's level` into `Highly Educated`. In this case, the `education` variable in both the census dataset and the survey dataset would match.
+
+#### Religion (religion) \
+In the census dataset, `religion_has_affiliation` records if the person selects the `has a religious affiliation` option, the `Don't know` option, the `No religious affiliation` option, or has missing values. To match the `religion` variable in the survey dataset, categorize these three categories into two groups. If the person selects the `has a religious affiliation` option, the `Don't know` option, or has missing values, then they belong to the `YES` group; otherwise, they belong to the `NO` group. In this case, missing values are considered as a person having religion but refusing to answer for personal reasons.
+
+#### Income Before Tax (income_before_tax) \
+`Income_respondent` in the census dataset is recorded as 7 categories. To match this variable with the `income_before_tax` variable in the survey dataset, categorize these categories into three main groups. If the person's income are `Less than $25,000` or `$25,000 to $49,999`, then he/she belongs to `Lower Middle Class to Poor`. If the person's income are `$50,000 to $74,999`, `$75,000 to $99,999`, or `$100,000 to $ 124,999`, then he/she belongs to `Middle Class`. If the person's income is `$125,000 and more`, then he/she belongs to `Upper Middle Class to Wealthy`.
+
+### Description of important variables 
+- Age: the respondent's age
+- Sex: the respondent's sex
+- Province: the province where the respondent currently lives
+- Education: the respondent's current education level
+- Religion: the respondent's religious affiliation
+- Income Before Tax: the respondent's current income class
+
+### Data Summary Measures
+
+```{r echo=FALSE}
+
+# Use this to calculate some summary measures. 
+summary_table_num <- data.frame(Variables = c("Census Dataset Age", "Survey Dataset Age", "Survey Dataset Liberal Votes", "Survey Dataset Conservative Votes", "Survey Dataset NDP Votes"),
+                                Min = c(15.0, 18.0, 0.000, 0.000, 0.000),
+                                first_quantile = c(37.0, 36.0, 0.000, 0.000, 0.000),
+                                Median = c(54.0, 53.0, 0.000, 0.000, 0.000),
+                                Mean = c(52.18, 51.3, 0.267, 0.249, 0.194),
+                                third_quatile = c(67.0, 66.0, 1.000, 0.000, 0.000),
+                                Max = c(80.0, 97.0, 1.000, 1.000, 1.000)
+                                )
+kable(summary_table_num, caption = "Numerical Variables in Survey and Census Dataset")
+```
+In Summary Table 1, the minimum age in the cleaned census dataset is 15, rendering some individuals ineligible to vote. The median age of the population is 54, with an average age of 52.180 and a maximum age of 80. In the cleaned survey dataset, the minimum age is 18, aligning with the minimum age for voting eligibility. The median age is 53, and the average age of voters is 51.3, with a maximum age of 97. Furthermore, in the cleaned survey dataset, we observe that the average Liberal votes are 0.267, the average Conservative votes are 0.249, and the average NDP votes are 0.194. Notably, the third quartile of votes for the Liberal party is 1, while the third quartile for the NDP and Conservative parties is 0.
+
+Additionally, there are two summary tables in the appendix. They describe the frequency of categorical data in the cleaned survey dataset and the cleaned census dataset, respectively.
+
+### Data visualization
+
+```{r, echo=FALSE}
+# Use this to create some plots. Should probably describe both the sample and population.
+hist(survey_data_new$age, col = "blue", main = "Plot.1 Age Distribution Comparison", xlab = "Age", ylab = "Frequency", xlim = c(min(survey_data_new$age, census_data_new$age), max(survey_data_new$age, census_data_new$age)))
+hist(census_data_new$age, col = "red", add = TRUE)
+legend("topright", legend = c("Survey Dataset", "Census Dataset"), fill = c("blue", "red"))
+```
+The blue bars in the plot represent the survey dataset, while the red bars represent the census dataset. The plot reveals that the survey dataset exhibits a higher frequency of both younger and older individuals. Additionally, there is a noticeable peak in the age range of 60-70 in the survey dataset, indicating that a significant proportion of respondents are in their seventies. In contrast, the census dataset shows a peak in the age range of 50-60, suggesting that the majority of individuals in the census are in their fifties.
+
+```{r, echo=FALSE}
+# Combine the data into one data frame for easier plotting
+combined_data_province <- rbind(
+  data.frame(province = survey_data_new$province, dataset = "Survey Dataset"),
+  data.frame(province = census_data_new$province, dataset = "Census Dataset"))
+
+# Plot a bar plot
+ggplot(combined_data_province, aes(x = province, fill = dataset)) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Plot.2 Comparison of Province Variable", x = "Province", y = "Count") +
+  scale_fill_manual(values = c("red", "blue")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+The bars are colored red for the census dataset and blue for the survey dataset. The plot indicates that the census dataset generally has a higher count for most provinces, except for Alberta, Ontario, and Quebec, where the survey dataset exhibits a higher count. This observation suggests differing geographic distributions between the survey dataset and the census dataset, potentially implying non-representativeness of the same population. Such disparities could impact the validity and reliability of the survey results.
+
+```{r, echo=FALSE}
+combined_data_education <- rbind(
+  data.frame(education = survey_data_new$education, dataset = "Survey Dataset"),
+  data.frame(education = census_data_new$education, dataset = "Census Dataset"))
+
+ggplot(combined_data_education, aes(x = education, fill = dataset)) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Plot.3 Comparison of Education Levels", x = "Education Level", y = "Count") +
+  scale_fill_manual(values = c("red", "blue")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+The bars are colored red for the census dataset and blue for the survey dataset. The plot illustrates that the census dataset exhibits a higher count for individuals with `Limited Education`, whereas the survey dataset demonstrates a higher count for those categorized as `Highly Educated` and `Some Education`. This observation suggests distinct education profiles between the survey dataset and the census dataset, potentially implying non-representativeness of the same population. Such disparities could impact the validity and reliability of the survey results.
+
+```{r echo=FALSE}
+combined_data_religion <- rbind(
+  data.frame(religion = survey_data_new$religion, dataset = "Survey Dataset"),
+  data.frame(religion = census_data_new$religion, dataset = "Census Dataset"))
+
+# Plot a bar plot
+ggplot(combined_data_religion, aes(x = religion, fill = dataset)) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Plot.4 Comparison of Religion", x = "Religion", y = "Count") +
+  scale_fill_manual(values = c("red", "blue"))
+```
+The bars are colored red for the census dataset and blue for the survey dataset. The plot indicates that in both datasets, there are more people who identify as religious than those who do not. However, the census dataset exhibits a much larger difference between the number of people identifying as religious and those who do not. This observation could suggest that the census dataset has a higher proportion of religious individuals than the survey dataset or that the census dataset has a larger sample size than the survey dataset, or possibly both scenarios.
+
+```{r echo=FALSE}
+# Combine the data into one data frame for easier plotting
+combined_data_income <- rbind(
+  data.frame(income_before_tax = survey_data_new$income_before_tax, dataset = "Survey Dataset"),
+  data.frame(income_before_tax = census_data_new$income_before_tax, dataset = "Census Dataset"))
+
+# Plot a boxplot
+ggplot(combined_data_income, aes(x = income_before_tax, fill = dataset)) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Plot.5 Comparison of Income Before Tax", x = "Income Before Tax") +
+  scale_fill_manual(values = c("red", "blue"))
+
+```
+The census dataset is represented by red bars, and the survey dataset is represented by blue bars. The survey dataset has a higher count in all categories except for the `Lower Middle Class to Poor` category, where the census dataset has a higher count. The plot suggests that the survey dataset and the census dataset have different income profiles, which may indicate that they are not representative of the same population. This discrepancy could impact the validity and reliability of the survey results.
+
+```{r echo=FALSE}
+df_long <- pivot_longer(na.omit(survey_data_new), cols = starts_with("vote_"), names_to = "Party", values_to = "Vote")
+
+# Plot a grouped bar plot
+ggplot(df_long, aes(x = Party, fill = as.factor(Vote))) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Plot.6 Comparison of Voting Preferences", x = "Party", y = "Count") +
+  scale_fill_manual(values = c("red", "blue"), name = "Party Choice", labels = c("Did Not Vote", "Voted")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+The graph depicts three pairs of bars, each representing a different political party: `Vote Conservative`, `Vote Liberal`, and `Vote NDP`. The bars are colored blue for those who voted and red for those who did not vote. The highest number of non-voters is associated with the `Vote NDP` party, with almost 12,000 votes. Conversely, the lowest number of votes is also observed for the `Vote NDP` party, with almost 3,000. The plot suggests that the NDP party is the least popular among voters, while the Liberal party is the most popular. The Conservative party falls somewhere in the middle, with about 3,500 votes. This graph is generated based on our cleaned survey dataset, and it is not aligning with our hypothesis, thus it is valuable to fit regression model and perform post-stratification on our data to examine the result. Additionally, the plot indicates a low level of voter turnout, as the red bars are significantly higher than the blue bars for all parties. This could suggest that a majority of people are not interested in voting.
+
+\newpage
+
+## Methods
+
+Aimed at predicting the vote of the next Canadian federal election, statistical methods are useful tools, such as regression, variable selection, and poststratification. There are some missing variables in our data. We decided to keep them because they do not affect our model. There are 20921 observations before dropping missing values and only 14544 left if dropping. For the sake of data integrity and visibility, we keep missing values. We take three steps to create our model using the data. Firstly, we use logistic regression to fit the initial model. By fitting the relationship between the variable of voting for Liberal/Conservative/NDP and chosen explanatory variables, we get the desired model to predict the probability of voting for a political party. And we observe important parameters in the model such as coefficients and p values. After observing  p values, we decided to use AIC stepwise selection to find out the final model which has minimized AIC. Finally, poststratification is used to estimate the proportion of voters who vote for Liberal or Conservative or NDP. We group the population by our predictors and calculate the proportion of voters for each political party.
+
+### Model Specifics
+We will use three logistic regression models to model the probability of voting for the Liberal party, the conservative party and the NDP respectively. We did some research on factors affecting vote choice and then selected six predictors for modeling. The predictors are age, sex, province, education, religion and income before tax. Age is the only continuous variable, the remaining five are all categorical variables. Thus, our general model is the following.
+$$log(\frac{p}{1-p}) = \beta_0+\beta_1x_{age}+\beta_2x_{male}+\beta_3x_{BC}+\beta_4x_{MB}+\beta_5x_{NB}+\beta_6x_{NL}$$
+$$+\beta_7x_{NS}+\beta_8x_{ON}+\beta_9x_{PE}+\beta_{10}x_{QC}+\beta_{11}x_{SK}+\beta_{12}x_{religion}+\beta_{13}x_{mid}+\beta_{14}x_{upper}$$
+
+$p$ is the probability of voting for a party (liberal or conservative or NDP).
+
+$\beta_0$ is the intercept, meaning the probability of voting when all predictors equal 0.
+
+$\beta_1$ is the amount of change in log odds when age increases by 1 unit. 
+
+$\beta_2$ is the amount of change in log odds when the individual is male.
+
+$x_{male}$ equals 1 if the individual is male and 0 if she is female.
+
+$\beta_3$ to $\beta_{11}$ are the amount of change in log odds when the individual lives in a specific province.
+
+$x_{BC}$ equals 1 if the individual lives in British Columbia. 
+
+$x_{MB}$ to $x_{SK}$ mean the same thing as $x_{BC}$ except the province has changed.
+
+$\beta_{12}$ is the amount of change in log odds when the individual has belief in religion.
+
+$x_{religion}$ equals 1 if the individual has belief in religion and 0 if not.
+
+$\beta_{13}$ is the amount of change in log odds when the individual is middle class.
+
+$x_{mid}$ equals 1 if the individual is middle class and 0 if not.
+
+$\beta_{13}$ is the amount of change in log odds when the individual is upper middle class to wealthy.
+
+$x_{upper}$ equals 1 if the individual is upper middle class to wealthy and 0 if not.
+
+Logistic regression is a powerful tool to analyze binary outcomes. It is a statistical model used to find the association between the binary response variable and some predictors which can be numerical or categorical. Logistic regression model predicts the likelihood of an event taking place by expressing the log odds as a linear combination of independent variables and the range of logistic regression is always bounded between 0 and 1(Belyadi & Haghighat, 2021). Our response variable is binary because it is only 0 or 1, and we have numerical and categorical predictor variables. Moreover, we want to model the probability of voting. Therefore, we choose to use logistic regression.
+
+There are four assumptions for logistic regression:
+
+1. Binary outcome. 
+
+2. Linearity in the logit for continuous variables.
+
+3. Absence of multicollinearity.
+
+4. Lack of strongly influential outliers.
+
+All assumptions are satisfied by our model. Firstly, the response variable is binary and there is linearity in the logit for the age variable. Secondly, all categorical variables are independent from each other. Obviously, an individual’s living province does not affect his or her gender, level of education, religion, or income, nor is it affected by these variables. Similarly, religion, sex, education level and income do not influence each other as well. Lastly, outliers in categorical variables do not need to worry about and there is no strong outlier in our continuous variable ‘age’.
+
+Note that some p values of our model are greater than 0.05, which implies no statistical significance. Too many variables may be included in the model and statistical power may be low. This issue is also related to overfitting. Therefore, we should go over the process of variable selection. We will use AIC to stepwise select predictor variables (both forwards and backwards). 
+
+AIC is a mathematical method used to calculate the number that represents how well a model fits the data. Smaller AIC means better fitness. Stepwise variable selection is the process of either adding or subtracting a variable to the set of predictors in the model based on some pre-specified criteria. In our project, the criteria is AIC. Thus, we use R to stepwise select a final model which has the smallest AIC. After conducting stepwise selection based on AIC, the variable sex is eliminated from all three models. Thus, our final general model (after AIC) is the following.
+
+$$log(\frac{p}{1-p}) = \beta_0+\beta_1x_{age}+\beta_2x_{BC}+\beta_3x_{MB}+\beta_4x_{NB}+\beta_5x_{NL}$$
+$$+\beta_6x_{NS}+\beta_7x_{ON}+\beta_8x_{PE}+\beta_9x_{QC}+\beta_{10}x_{SK}+\beta_{11}x_{religion}+\beta_{12}x_{mid}+\beta_{13}x_{upper}$$
+
+```{r include=FALSE}
+# Creating the Model
+m_lib <- glm(vote_liberal ~ age+sex+province+education+religion+income_before_tax,
+          data=survey_data_new, family = "binomial")
+summary(m_lib)
+
+### Don't show the results/output here...
+step_lib = stepAIC(m_lib, direction = "both", k = 2)
+#summary(step_lib)
+```
+```{r include=FALSE}
+m_cons <- glm(vote_conservative ~ age+sex+province+education+religion+income_before_tax,
+          data=survey_data_new, family = "binomial")
+
+step_cons = stepAIC(m_cons, direction = "both", k = 2)
+#summary(step_cons)
+```
+```{r include=FALSE}
+m_ndp <- glm(vote_ndp ~ age+sex+province+education+religion+income_before_tax,
+          data=survey_data_new, family = "binomial")
+#summary(m_ndp)
+step_ndp = stepAIC(m_ndp, direction = "both", k = 2)
+#summary(step_ndp)
+```
+
+
+## Post-Stratification 
+
+Poststratification is a statistical method designed to analyze data from a survey sample. It divides the population into subgroups based on certain characteristics. Each group is analyzed separately. After collecting data, researchers weigh the observations and calculate estimators in each group. Poststratification is particularly useful when observations differ significantly in some variables. For example, the variable province in our data is versatile among individuals. By taking these differences into account, it improves the precision and accuracy of the estimates. Poststratification usually obtains reliable and representative estimates for the population, so we use it to estimate the proportion of voters for each political party (Liberal, Conservative and NDP) in the next election. Besides, we want to see the difference between the original model and the model after AIC stepwise selection, so we calculated two $\hat{y}^{PS}$ for each party. For primary models, we group the population by six variables: age, sex, province, education, religion and income before tax. For AIC models, sex is removed. The following mathematical formula is used to calculate $\hat{y}^{PS}$.
+$$\hat{y}^{PS} = \frac{\Sigma N_j\hat{y}_j}{\Sigma N_j}$$
+$\hat{y}_j$ is the proportion of voting of each group. 
+
+$N_j$ is the population size of each group.
+
+Within each group, we calculate the proportion estimate. Then, we get the overall proportion of the original model and the overall proportion of the final model according to the formula. 
+
+
+\newpage
+
+## Results 
+
+In this section, we will perform the results, estimated probability, obtained from post-stratification and the models. Below is the summary table of the AIC adjusted model for the Conservative Party. Please refer to appendix table7 and table8 for summary table of the Liberal Party and NDP.
+
+Summary Table.2 for the Conservative Party:
+```{r echo=FALSE}
+
+# Creating the Model
+####model <- lm(vote_liberal ~ age, data=survey_data)
+
+# Model Results (to Report in Results section)
+
+#summary(step_cons)
+#table2
+knitr::kable(broom::tidy(step_cons))
+#broom::tidy(m_cons)
+#broom::tidy(step_lib)
+#broom::tidy(m_lib)
+#broom::tidy(step_ndp)
+#broom::tidy(m_ndp)
+
+```
+
+
+
+```{r include=FALSE}
+# Here I will perform the post-stratification calculation with AIC model, wiz census data
+###Conservative wiz aic
+step_cons <- glm(vote_conservative ~ age+province+education+religion+income_before_tax,
+          data=survey_data_new, family = "binomial")
+step_cons_counts <- census_data_new %>%
+  group_by(age, province, education, religion, income_before_tax)%>%
+  summarise(N_j=n(), .groups = 'keep')
+#step_cons_counts
+
+step_cons_counts$estimate <- 
+  step_cons %>%
+  predict(newdata = step_cons_counts, type = "response")
+
+cons_aic <- step_cons_counts %>%
+  mutate(predict_prob_cons = estimate*N_j) %>% 
+  ungroup() %>%
+  summarise(yPS_cons_aic = sum(predict_prob_cons)/sum(N_j))
+
+#Cons with primary
+cons_counts <- census_data_new %>%
+  group_by(age, sex, province, education, religion, income_before_tax)%>%
+  summarise(N_j=n(), .groups = 'keep')
+
+cons_counts$estimate <- 
+  m_cons %>%
+  predict(newdata = cons_counts, type = "response")
+
+cons_estimate <- cons_counts %>%
+  mutate(predict_prob_cons = estimate*N_j) %>% 
+  ungroup() %>%
+  summarise(yPS_cons = sum(predict_prob_cons)/sum(N_j))
+
+
+###Liberal
+step_lib <- glm(vote_liberal ~ age+province+education+religion+income_before_tax,
+          data=survey_data_new, family = "binomial")
+step_lib_counts <- census_data_new %>%
+  group_by(age, province, education, religion, income_before_tax)%>%
+  summarise(N_j=n(), .groups = 'keep')
+
+step_lib_counts$estimate <- 
+  step_lib %>%
+  predict(newdata = step_lib_counts, type = "response")
+
+lib_aic <- step_lib_counts %>%
+  mutate(predict_prob_lib = estimate*N_j) %>% 
+  ungroup() %>%
+  summarise(yPS_lib_aic = sum(predict_prob_lib)/sum(N_j))
+
+#Lib with primary
+lib_counts <- census_data_new %>%
+  group_by(age, sex, province, education, religion, income_before_tax)%>%
+  summarise(N_j=n(), .groups = 'keep')
+
+lib_counts$estimate <- 
+  m_lib %>%
+  predict(newdata = lib_counts, type = "response")
+
+lib_estimate <- lib_counts %>%
+  mutate(predict_prob_lib = estimate*N_j) %>% 
+  ungroup() %>%
+  summarise(yPS_lib = sum(predict_prob_lib)/sum(N_j))
+
+
+
+###NDP, redefined step_ndp b/c we will keep education for all model
+step_ndp <- glm(vote_ndp ~ age+province+education+religion+income_before_tax,
+          data=survey_data_new, family = "binomial")
+
+step_ndp_counts <- census_data_new %>%
+  group_by(age, province, education, religion, income_before_tax)%>%
+  summarise(N_j=n(), .groups = 'keep')
+
+step_ndp_counts$estimate <-
+  step_ndp %>%
+  predict(newdata = step_ndp_counts, type = "response")
+
+ndp_aic <- step_ndp_counts %>%
+  mutate(predict_prob_ndp = estimate*N_j) %>%
+  ungroup() %>%
+  summarise(yPS_ndp_aic = sum(predict_prob_ndp)/sum(N_j))
+
+#NDP with primary
+ndp_counts <- census_data_new %>%
+  group_by(age, sex, province, education, religion, income_before_tax)%>%
+  summarise(N_j=n(), .groups = 'keep')
+
+ndp_counts$estimate <- 
+  m_ndp %>%
+  predict(newdata = ndp_counts, type = "response")
+
+ndp_estimate <- ndp_counts %>%
+  mutate(predict_prob_ndp = estimate*N_j) %>% 
+  ungroup() %>%
+  summarise(yPS_ndp = sum(predict_prob_ndp)/sum(N_j))
+
+```
+
+## Table of Result
+```{r, echo=FALSE}
+#Table for yPS before and after(on census data)
+
+Party_Name <- c("Conservative", "Liberal", "NDP")
+yPS_primary <- c(cons_estimate,lib_estimate,ndp_estimate)
+yPS_AIC <- c(cons_aic ,lib_aic, ndp_aic)
+#table3
+knitr::kable(tibble(Party_Name, yPS_primary,yPS_AIC), caption = "The Hat of yPS For Each Party, Between Primary Model and Final Model")
+
+```
+Table.3 shows the estimates for each party. The estimated probability of individuals voting for the Conservative Party using our adjusted final model is around 0.25. This suggests that approximately 25% of individuals within the specified age, province, education, religion, and income groups are estimated to vote for the Conservative Party in the 2025 Canadian Election. Next, the estimated probability of individuals voting for the Liberal Party using the AIC adjusted model is around 0.24. Thus, based on our model, approximately 24.9% of individuals within the specified characteristics are estimated to vote for the Liberal Party. Lastly, the estimated probability of individuals voting for the NDP using the model is around 0.20. That is, around 20% of the individuals with the specified characteristics are estimated to vote for the NDP.
+
+
+## The 95% Confidence Interval
+The problem of our prediction are obvious: we have resulted in very similar probabilities for the Conservative and Liberal Party. Thus, we must look at the **confidence interval** for the predicted probability. Confidence intervals around predicted probabilities for our logistic regression model offer insights into the uncertainty associated with those predictions(Zach, 2022). A narrow confidence interval suggests our model is more precise and reliable when estimating the outcomes, and based on the model assumption, we are given more confidence about the estimation as well. Oppositely, a wider interval indicates more uncertainty about the predictions based on our model, and it may also result in less precision as well(Bevans, 2023). 
+The 95% logistic regression confidence intervals we obtained for predicted probabilities at each individual observation provide a range within which the true probability of an event (such as belonging to a specific province, age…etc.) is likely to fall into. This interval captures the uncertainty in class probabilities(Zach, 2022).
+
+Our confidence interval is calculated by the formula: \
+
+$\text{The 95\% CI} = \text{Predicted Probability} \pm 1.96 \times \sqrt{\frac{\text{Predicted Probability} \times (1 - \text{Predicted Probability})}{\text{Number of Observations}}}$
+
+
+```{r echo=FALSE}
+cons_predictions <- predict(step_cons, newdata = step_cons_counts, type = "response", interval = "confidence")
+cons_CI <- data.frame(cons_predictions)
+
+lib_predictions <- predict(step_lib, newdata = step_lib_counts, type = "response", interval = "confidence")
+lib_CI <- data.frame(lib_predictions)
+
+ndp_predictions <- predict(step_ndp, newdata = step_ndp_counts, type = "response", interval = "confidence")
+ndp_CI <- data.frame(ndp_predictions)
+
+```
+
+```{r, echo=FALSE}
+# Calculate LB and UB for cons
+cons_CI$lwr <- cons_CI$cons_predictions - 1.96 * sqrt(cons_CI$cons_predictions * (1 - cons_CI$cons_predictions) / nrow(cons_CI))
+cons_CI$upr <- cons_CI$cons_predictions + 1.96 * sqrt(cons_CI$cons_predictions * (1 - cons_CI$cons_predictions) / nrow(cons_CI))
+
+#Show the CI with data
+ci_census_cons <- subset(step_cons_counts, select = -N_j)
+ci_census_cons <- subset(ci_census_cons, select = -estimate)
+ci_cons_withdata <- cbind(ci_census_cons, cons_CI)
+
+#table4
+knitr::kable(head(ci_cons_withdata, 3), caption = "First 3 Confidence Interval for Conservative Party")
+```
+These intervals give us an estimate of the uncertainty around the predicted probabilities for each individual observation based on the logistic regression models. They indicate the range in which the true probability of an observation belonging to a specific class (Conservative or Liberal) is likely to fall, considering the model's uncertainty. 
+For instance, Table.4 first row shows the prediction for an individual who is 15 years old, living in Alberta, with limited education, has religion, and belongs to the Lower-Middle-Class income group. Our model suggests the probability of this individual voting for the Conservative party is approximately 29.05%, and this prediction has a 95% confidence interval, thus the true probability could range from approximately 27.80% to 30.31%. This means that the actual probability of voting Conservative could be as low as about 27.80%, while the upper bound indicates a 95% likelihood that it could be as high as about 30.31%.
+
+
+```{r, echo=FALSE}
+# Calculate LB and UB for lib
+lib_CI$lwr <- lib_CI$lib_predictions - 1.96 * sqrt(lib_CI$lib_predictions * (1 - lib_CI$lib_predictions) / nrow(lib_CI))
+lib_CI$upr <- lib_CI$lib_predictions + 1.96 * sqrt(lib_CI$lib_predictions * (1 - lib_CI$lib_predictions) / nrow(lib_CI))
+
+#Show the CI with data
+ci_census_lib <- subset(step_lib_counts, select = -N_j)
+ci_census_lib <- subset(ci_census_lib, select = -estimate)
+ci_lib_withdata <- cbind(ci_census_lib, lib_CI)
+
+#table5
+knitr::kable(head(ci_lib_withdata, 3), caption = "First 3 Confidence Interval for Liberal Party")
+```
+Similarly, Table.5 first row suggests that for an individual who has the same background and characteristics(as previously explained in Table.3's individual), our model suggests the probability of him/her voting for the Liberal party is only approximately 8.7%. This prediction also comes with a 95% confidence interval, indicating that the true probability could range from around 7.9% to 9.4%.
+
+In the above cases shown, the Liberal Party's narrower interval (7.9% to 9.4%) suggests higher reliability and more precision in the model's prediction compared to the Conservative Party's wider interval (27.80% to 30.31%), showing a higher uncertainty in predicting the Conservative votes based on the given characteristics specifically.
+
+
+
+\newpage
+
+## Conclusions
+According to multiple researches, Canadian voters mainly focused on the top 5 issues: rising cost of living, housing, healthcare, economy, and environment, which is why the corresponding plans, measures and programs proposed by the parties in the election campaigns are also the focus of voters' attention. With this in mind, we found 5 polls for the 2025 election on the internet, and four of them showed that more votes support the Conservative Party over the Liberal Party, with very little difference, and the NDP only has very little support from the participants. Meanwhile, we observe from Barik’s article that Canadians tend to believe the Conservative Party performed better when dealing with the top 5 issues(Barik, 2023). Therefore, our hypothesis for the 2025 Canadian Election is that **the Conservative Party will be slightly favoured in winning the election over the Liberal Party**.
+
+For model selection, we chose several predictors from the census and survey dataset based on research and the concern of the top 5 issues, cleaned the data, and separated them into three datasets. Since we aimed to predict whether each voter with a complex social background would vote for a certain party or not, we decided to fit **three primarily logistic regression models**. Each model corresponds to either the Conservative Party, the Liberal Party, or the NDP. The models are fitted with the response variable being “to vote for this party”, and each model predicts the probability of the individuals voting for the corresponding party. Next, we did the Akaike’s Information Criteria test to get rid of unnecessary predictors and decided our predictors for the final models: age, province, religion, education, and income before tax.
+
+Finally, we have performed post-stratification on our chosen predictors to calculate the appropriate probability for each party. This result suggests that after we perform model selection and post-stratification, the Conservative Party's predicted probability is 0.25015 that there is a 25% chance of winning the 2025 election, which has the highest probability of being voted. On the other hand, the Liberal Party's predicted probability is 0.24909, which has a 24.9% chance of winning the election; and only a 20% chance for the NDP. Thus, this result aligns with our prior prediction that the Conservative Party is slightly favoured to win the 2025 Canada Election over the Liberal Party, based on the provided census and survey data. The key result we found is similar to our previous researches. **While there will also be a relatively small group of voters supporting the NDP, the Conservative and Liberal Party will be the two major competitors for the 2025 Canadian Election, and the Conservatives will be slightly favoured by the voters.** 
+
+
+## Reflection on Drawback of Current Study
+An issue we noticed is around the age of the participants. As our data was established in 2021, some participants, who were younger than 18, did not have the right to vote will become eligible to vote next year in 2025. However, we also found out that even the youngest participants in our cleaned dataset are above the age of 15, making them eligible to vote in 2025. As a result, we chose not to remove the young participants and included everyone in both the census and survey datasets, considering that all of them will be eligible to vote next year. However, it's important to note their age in 2021 and the fact that they were not able to vote, as this might have heavily influenced their decision-making. Thus, in our future study, we must to be mindful of how age could have impacted our prediction model.
+
+
+## Improvement for Future Study
+From this assignment, we found that predicting election outcomes is difficult due to the complex personal reasons guiding how people vote. Our study has shown that it's tough to predict perfectly because there's a lot of uncertainty and errors in understanding such private choices, especially when things like policies change all the time. While we can't expect a "perfect model" for the 2025 Canadian Election, it might help to include more predictors in future studies. Incorporating additional variables allows us to enhance the precision of our predictions and minimize the risk of losing meaningful predictors.
+
+
+To summarize our study, we performed the binary logistic regression approach with post-stratification to predict the probability of participants voting for a specific party: Conservative, Liberal, or NDP. Our prediction involved forecasting the likelihood of each of the three party winning the upcoming 2025 Canadian Election using data from the 2021 Canadian Census and Survey. And most Importantly, our estimated results align with the majority of our research which suggesting that the Conservative Party is most likely to win, closely followed by the Liberal party. This prediction is based on the complex factors within the 5 variables of interests that we found vulnerable to include, based on our research on the top 10 concerns of current Canadians. Therefore, our prediction has significance as it supports Barik’s latest report on recent Canadian polls, indicating that the Conservatives would be the winner in the 2025 Canadian Election (Barik, 2023).
+
+\newpage
+
+## Bibliography
+
+1. Grolemund, G. (2014, July 16) *Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/articles_intro.html](https://rmarkdown.rstudio.com/articles_intro.html). (Last Accessed: April 4, 1991) 
+
+2.  RStudio Team. (2020). *RStudio: Integrated Development for R*. RStudio, PBC, Boston, MA URL [http://www.rstudio.com/](http://www.rstudio.com/).
+
+3.  Allaire, J.J., et. el. *References: Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/docs/](https://rmarkdown.rstudio.com/docs/). (Last Accessed: April 4, 1991) 
+
+4. OpenAI. (2023). *ChatGPT (September 13 version) [Large language model]*. [https://chat.openai.com/chat](https://chat.openai.com/chat) (Last Accessed: September 13, 2023)
+
+5. Mine Çetinkaya-Rundel, David Diez, Andrew Bray, Albert Y. Kim, Ben Baumer, Chester Ismay, Nick Paterno and
+  Christopher Barr (2021). *openintro: Data Sets and Supplemental Functions from 'OpenIntro' Textbooks and Labs*.
+  [http://openintrostat.github.io/openintro/](http://openintrostat.github.io/openintro/),[https://github.com/OpenIntroStat/openintro/](https://github.com/OpenIntroStat/openintro/).
+  
+6. Wickham H, Averick M, Bryan J, Chang W, McGowan LD, François R, Grolemund G, Hayes A, Henry L, Hester J, Kuhn
+M, Pedersen TL, Miller E, Bache SM, Müller K, Ooms J, Robinson D, Seidel DP, Spinu V, Takahashi K, Vaughan D,
+Wilke C, Woo K, Yutani H (2019). “Welcome to the tidyverse.” _Journal of Open Source Software_, *4*(43), 1686.
+doi: 10.21105/joss.01686 [https://doi.org/10.21105/joss.01686](https://doi.org/10.21105/joss.01686).
+
+7. H. Wickham. (2016). *ggplot2: Elegant Graphics for Data Analysis*. Springer-Verlag New York.
+
+8. Venables, W. N. & Ripley, B. D. (2002) *Modern Applied Statistics with S. Fourth Edition*. Springer, New York.
+  ISBN 0-387-95457-0
+  
+9. Xie Y (2023). _knitr: A General-Purpose Package for Dynamic Report Generation in R_. R package version 1.43,
+[https://yihui.org/knitr/](https://yihui.org/knitr/).
+
+10. Hadley Wickham, Davis Vaughan and Maximilian Girlich (2023). *tidyr: Tidy Messy Data*. [https://tidyr.tidyverse.org, https://github.com/tidyverse/tidyr](https://tidyr.tidyverse.org, https://github.com/tidyverse/tidyr.).
+
+11. Dominic Comtois (2022). *summarytools: Tools to Quickly and Neatly Summarize Data. R package version 1.0.1*. [https://github.com/dcomtois/summarytools](https://github.com/dcomtois/summarytools).
+
+12. Zach. (2021, September 13). *The complete guide: How to report logistic Regression Results*. Statology. [https://www.statology.org/how-to-report-logistic-regression-results/](https://www.statology.org/how-to-report-logistic-regression-results/).
+
+13. *Why is accuracy not the best measure for assessing classification models? (n.d.)*. Cross Validated. [https://stats.stackexchange.com/questions/312780/why-is-accuracy-not-the-best-measure-for-assessing-classification-models](https://stats.stackexchange.com/questions/312780/why-is-accuracy-not-the-best-measure-for-assessing-classification-models).
+
+14. Bevans, R. (2023, June 22). *Understanding confidence Intervals | Easy Examples & Formulas*. Scribbr. [https://www.scribbr.com/statistics/confidence-interval/](https://www.scribbr.com/statistics/confidence-interval/).
+
+15. Barik, A. (2023, November 14). *Latest Federal Opinion Polls Canada 2025: Game over for Justin Trudeau?* The PoliticalPulse. [https://politicalpulse.net/politics/federal-opinion-polls-canada/](https://politicalpulse.net/politics/federal-opinion-polls-canada/).
+
+
+16. *Elections Step by step | Elections Canada’s Civic Education. (n.d.-b)*. Elections Canada. [https://electionsanddemocracy.ca/canadas-elections/canadas-election-process/elections-step-step](https://electionsanddemocracy.ca/canadas-elections/canadas-election-process/elections-step-step).
+
+17. *Past elections*. Elections Canada. [https://www.elections.ca/content.aspx?section=ele&dir=pas&document=index&lang=e](https://www.elections.ca/content.aspx?section=ele&dir=pas&document=index&lang=e).
+
+18. Nakhaie, R. (2006, June 8). *Electoral Participation in Municipal, Provincial and Federal Elections in Canada*. Cambridge Core. [https://www.cambridge.org/core/publications/journals](https://www.cambridge.org/core/publications/journals).
+
+19. WATSON, S., &amp; Arunachalam, R. (2016, June). *Height, Income and Voting*. [https://www.cambridge.org/core/services/aop-cambridge-core/content/view/2B6875BFB8B956963D1DBBD510A581CF/S0007123416000211a.pdf/div-class-title-height-income-and-voting-div.pdf](https://www.cambridge.org/core/services/aop-cambridge-core/content/view/2B6875BFB8B956963D1DBBD510A581CF/S0007123416000211a.pdf/div-class-title-height-income-and-voting-div.pdf).
+
+20. *Youth Voting Trends in Canada | Elections Canada’s Civic Education*. (2023). [https://electionsanddemocracy.ca/canadas-elections/youth-voting-trends](https://electionsanddemocracy.ca/canadas-elections/youth-voting-trends).
+
+21. Statistics Canada. (2015, November 27). *Factors associated with voting. Statistics Canada: Canada’s national statistical agency / Statistique Canada : Organisme statistique national du Canada*. Statistics Canada. [https://www150.statcan.gc.ca/n1/pub/75-001-x/2012001/article/11629-eng.htm#blais-04](https://www150.statcan.gc.ca/n1/pub/75-001-x/2012001/article/11629-eng.htm#blais-04).
+
+22. University of Waterloo.(2019, October 15). *How religious beliefs affect voting behavior in Canada | Arts*. University of Waterloo.  [https://uwaterloo.ca/arts/news/how-religious-beliefs-affect-voting-behavior-canada](https://uwaterloo.ca/arts/news/how-religious-beliefs-affect-voting-behavior-canada).
+
+23. Gidengil, E. (2022, August 17). *Voting behaviour in Canada: the state of the discipline. Canadian Journal of Political Science, 55(4), 916–938*. [https://doi.org/10.1017/s0008423922000531](https://doi.org/10.1017/s0008423922000531).
+
+24. Belyadi, H., & Haghighat, A. (2021). *Supervised learning. In Elsevier eBooks (pp. 169–295)*. [https://doi.org/10.1016/b978-0-12-821929-4.00004-4](https://doi.org/10.1016/b978-0-12-821929-4.00004-4).
+
+
+\newpage
+
+## Appendix
+
+All analysis for this report was programmed using `R version 4.0.2`. 
+
+## Generative AI Statement
+
+I used ChatGPT Version available on November 19, 2023. I used the tool to understand "How to generate proper plots for confidence interval in R?". I suggested me to plot with the package "ggplot2", and gave me an example code. I referenced to the provided code and generated my plots in appendix.
+
+I used ChatGPT Version available on November 21, 2023. I used the tool to understand "Is confidence interval for all types of models the same in statistics?". It introduced the overall meaning of confidence interval and gave me example for a linear regression model. I then asked "Is it the same for regression model?", it tells me the slight difference between the two models, and I learned the difference and applied the logistic regression's meaning into my interpretation.
+
+I used ChatGPT Version available on November 21, 2023. I used the tool to understand "How should I interpret confidence interval for logistic regression model?". It gave me a very long list of what should be considered when deaaling with confidence interval for logistic model. I applied the meaning of confidence interval it told me into my interpretation and combined with my context.
+
+I used ChatGPT Version available on November 22, 2023. I encounter an error when knitting my rmd file into pdf, and the R markdown suggested that some problem occurred with my latex. I used the tool to understand "I have Latex in my file, what error could occur when generating rmd files into pdf in r?". It gave me a long list of what should I be aware of, for example, Escape Special Characters, Enclose Text in Math Mode, and etc... I revised my Latex notation based on its suggestion.
+
+
+
+### Supplementary Materials
+
+```{r, echo=FALSE}
+#Cons CI plot
+cons_predictions <- predict(step_cons, newdata = step_cons_counts, type = "response", interval = "confidence")
+cons_CI <- data.frame(cons_predictions)
+
+cons_CI$lwr <- cons_CI$cons_predictions - 1.96 * sqrt(cons_CI$cons_predictions * (1 - cons_CI$cons_predictions) / nrow(cons_CI))
+cons_CI$upr <- cons_CI$cons_predictions + 1.96 * sqrt(cons_CI$cons_predictions * (1 - cons_CI$cons_predictions) / nrow(cons_CI))
+
+cons_CI$observation <- 1:nrow(cons_CI)
+
+ggplot(cons_CI, aes(x = observation, y = cons_predictions)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = lwr, ymax = upr), width = 0.2) +
+  labs(x = "Observation", y = "Predicted Probability") +
+  ggtitle("Plot.7 Predicted Probabilities for Conservative Party with Confidence Intervals")
+```
+Plot.7 is a plot of Confidence Interval for all predicted probabilities, for the Conservative Party.
+
+```{r echo=FALSE}
+#Lib CI plot
+lib_predictions <- predict(step_lib, newdata = step_lib_counts, type = "response", interval = "confidence")
+lib_CI <- data.frame(lib_predictions)
+
+lib_CI$lwr <- lib_CI$lib_predictions - 1.96 * sqrt(lib_CI$lib_predictions * (1 - lib_CI$lib_predictions) / nrow(lib_CI))
+lib_CI$upr <- lib_CI$lib_predictions + 1.96 * sqrt(lib_CI$lib_predictions * (1 - lib_CI$lib_predictions) / nrow(lib_CI))
+
+lib_CI$observation <- 1:nrow(lib_CI)
+
+ggplot(lib_CI, aes(x = observation, y = lib_predictions)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = lwr, ymax = upr), width = 0.2) +
+  labs(x = "Observation", y = "Predicted Probability") +
+  ggtitle("Plot.8 Predicted Probabilities for Liberal Party with Confidence Intervals")
+```
+Plot.8 is a plot of Confidence Interval for all predicted probabilities, for the Liberal Party.
+
+\newpage
+
+## Table 6
+```{r echo=FALSE}
+# Summary Table Lib
+knitr::kable(broom::tidy(step_lib))
+```
+The above Table.6 is the summary table of the AIC adjusted model for Liberal Party 
+
+
+## Table 7
+```{r echo=FALSE}
+# Summary Table NDP
+knitr::kable(broom::tidy(step_ndp))
+```
+The above Table.7 is the summary table of the AIC adjusted model for the NDP.
+
+
+## Density plot
+```{r echo=FALSE}
+ggplot(cons_CI, aes(x = cons_predictions)) +
+  geom_density(alpha = 0.5, fill = "blue") +
+  labs(x = "Predicted Probability", y = "Density", title = "Plot.9 The Density Plot for Predicted Probabilities for Conservative")
+```
+
+```{r echo=FALSE}
+#lib_CI <- data.frame(lib_predictions)
+
+ggplot(lib_CI, aes(x = lib_predictions, fill = "Liberal")) +
+  geom_density(alpha = 0.5, fill = "green") +
+  labs(x = "Predicted Probability", y = "Density", title = "Plot.10 The Density Plot for Predicted Probabilities for Liberal")
+```
+\
+The above Figure 9 and 10 are density plots for Conservative and Liberal Party, they are the distribution of our predicted probabilities. While both distributions being slightly left skew, this means that both have majority of the predicted probabilities on the side closer to 0.2, and suggests that the model is more inclined to predict higher probabilities for both Conservative and Liberal parties. Also, the peak of the density plot for the Liberal party is about 4, which is higher compared to the Conservative party. This indicates that the model tends to predict a more concentrated range of higher probabilities for the Liberal party compared to the Conservative party. Lastly, there is an obvious overlap between the two distributions, this means that there is uncertainty(less confidence) in distinguishing between the predicted probabilities for Conservative and Liberal parties.
+
+\newpage
+
+```{r echo=FALSE}
+# Categorical Summary Table For the Survey Dataset
+categorical_survey_data <- survey_data_new %>% dplyr::select(sex, province, education, religion, income_before_tax)
+# Generate a summary table for multiple categorical variables
+summary_table_survey <- table(categorical_survey_data)
+#table6
+kable(summary_table_survey, caption = "Categorical Summary Table For the Survey Dataset")
+#print(summary_table_survey)
+```
+
+\newpage
+
+
+```{r echo=FALSE}
+# Categorical Summary Table For the Census Dataset
+categorical_census_data <- census_data_new %>% dplyr::select(sex, province, education, religion, income_before_tax)
+# Generate a summary table for multiple categorical variables
+summary_table_census <- table(categorical_census_data)
+#print(summary_table_census)
+kable(summary_table_census, caption = "Categorical Summary Table For the Census Dataset")
+```
+
