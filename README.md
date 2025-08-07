@@ -12,8 +12,6 @@ We developed three binary logistic regression models — one for each major part
 
 Based on polls and media reports (e.g., Barik, 2023), the Conservative Party is perceived by many Canadians as better equipped to address the top 5 issues. Our hypothesis is that **the Conservative Party is slightly favoured to win** over the Liberal Party in the 2025 election.
 
----
-
 ## 🧠 Methodology
 
 ### 1. Data Sources
@@ -34,8 +32,6 @@ After exploratory data analysis and model selection via **Akaike’s Information
 - Each model predicts the probability of an individual voting for the respective party.
 - Applied **post-stratification** to adjust estimates according to population demographics.
 
----
-
 ## 📈 Results Summary
 
 - **Conservative Party**: ~25.0% predicted vote share (highest)
@@ -44,23 +40,17 @@ After exploratory data analysis and model selection via **Akaike’s Information
 
 Our prediction aligns with current polling and Barik’s (2023) analysis, suggesting a close race between Conservatives and Liberals, with **Conservatives slightly leading**.
 
----
-
 ## 🧩 Limitations
 
 - The 2021 data includes individuals who were **under 18 at the time**, but will be eligible to vote in 2025. Their opinions in 2021 may not reflect their future voting behavior.
 - Voter preferences can shift rapidly due to **policy changes** or **external events**.
 - Our model is limited to five demographic predictors; other relevant factors (e.g., political affiliation, media influence, campaign effects) are not included.
 
----
-
 ## 🚀 Future Improvements
 
 - Include additional variables (e.g., occupation, urban/rural status, political ideology).
 - Incorporate real-time polling and social media sentiment.
 - Use ensemble or probabilistic models for higher accuracy.
-
----
 
 ## 📌 Conclusion
 
